@@ -180,6 +180,10 @@ public class KitItemManager {
             kitItem.setNbt(nbtList);
         }
 
+        if(serverVersion.serverVersionGreaterEqualThan(serverVersion,ServerVersion.v1_20_R4)){
+            kitItem.setOriginalItem(item.clone());
+        }
+
 
         kitItem.setAttributes(ItemUtils.getAttributes(plugin,item));
         kitItem.setSkullData(ItemUtils.getSkullData(item));
