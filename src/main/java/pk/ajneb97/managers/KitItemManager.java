@@ -175,11 +175,13 @@ public class KitItemManager {
             }
         }
 
-        if(!serverVersion.serverVersionGreaterEqualThan(serverVersion,ServerVersion.v1_20_R4)){
-            List<String> nbtList = ItemUtils.getNBT(plugin,item);
-            if(!nbtList.isEmpty()) {
-                kitItem.setNbt(nbtList);
-            }
+        List<String> nbtList = ItemUtils.getNBT(plugin,item);
+        if(!nbtList.isEmpty()) {
+            kitItem.setNbt(nbtList);
+        }
+
+        if(serverVersion.serverVersionGreaterEqualThan(serverVersion,ServerVersion.v1_20_R4)){
+            kitItem.setOriginalItem(item.clone());
         }
 
 
@@ -377,10 +379,8 @@ public class KitItemManager {
         }
         item.setItemMeta(meta);
 
-        if(!serverVersion.serverVersionGreaterEqualThan(serverVersion,ServerVersion.v1_20_R4)){
-            List<String> nbtList = kitItem.getNbt();
-            item = ItemUtils.setNBT(plugin,item, nbtList);
-        }
+        List<String> nbtList = kitItem.getNbt();
+        item = ItemUtils.setNBT(plugin,item, nbtList);
 
         return item;
     }
