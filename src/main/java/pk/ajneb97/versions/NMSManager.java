@@ -16,13 +16,15 @@ public class NMSManager {
     private Version version;
     private ServerVersion serverVersion;
     private PlayerKits2 plugin;
+    private final boolean nmsUnavailable;
 
     public NMSManager(PlayerKits2 plugin){
         this.plugin = plugin;
         this.version = new Version();
         this.serverVersion = PlayerKits2.serverVersion;
+        this.nmsUnavailable = serverVersionGreaterEqualThan(ServerVersion.v1_20_R4);
 
-        if(serverVersionGreaterEqualThan(ServerVersion.v1_20_R4)){
+        if(nmsUnavailable){
             return;
         }
 
@@ -215,6 +217,10 @@ public class NMSManager {
     }
 
     public List<String> getNBT(ItemStack item){
+        if(nmsUnavailable){
+            return Collections.emptyList();
+        }
+
         List<String> nbtList = new ArrayList<>();
         try {
             Object newItem = version.getMethodRef("asNMSCopy").invoke(null,item); //ItemStackNMS
@@ -271,6 +277,10 @@ public class NMSManager {
             return item;
         }
 
+        if(nmsUnavailable){
+            return item;
+        }
+
         try {
             Object newItem = version.getMethodRef("asNMSCopy").invoke(null,item); //ItemStackNMS
             Object compound = getNBTCompound(newItem);
@@ -319,6 +329,10 @@ public class NMSManager {
     }
 
     public List<String> getAttributes(ItemStack item) {
+        if(nmsUnavailable){
+            return null;
+        }
+
         try {
             Object newItem = version.getMethodRef("asNMSCopy").invoke(null,item); //ItemStackNMS
             if((boolean)version.getMethodRef("hasTag").invoke(newItem,null)) {
@@ -352,6 +366,10 @@ public class NMSManager {
     }
 
     public ItemStack setAttributes(ItemStack item, List<String> attributeList) {
+        if(nmsUnavailable){
+            return item;
+        }
+
         try{
             Object newItem = version.getMethodRef("asNMSCopy").invoke(null,item); //ItemStackNMS
             Object compound = getNBTCompound(newItem);
