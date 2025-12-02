@@ -377,10 +377,8 @@ public class KitItemManager {
         }
         item.setItemMeta(meta);
 
-        if(!serverVersion.serverVersionGreaterEqualThan(serverVersion,ServerVersion.v1_20_R4)){
-            List<String> nbtList = kitItem.getNbt();
-            item = ItemUtils.setNBT(plugin,item, nbtList);
-        }
+        List<String> nbtList = kitItem.getNbt();
+        item = ItemUtils.setNBT(plugin,item, nbtList);
 
         return item;
     }
