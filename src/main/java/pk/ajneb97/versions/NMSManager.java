@@ -8,6 +8,7 @@ import org.bukkit.persistence.PersistentDataType;
 import pk.ajneb97.PlayerKits2;
 import pk.ajneb97.utils.ServerVersion;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class NMSManager {
@@ -38,26 +39,27 @@ public class NMSManager {
                 version.addMethod("listGet",version.getClassRef("NBTTagList").getMethod("get",int.class));
                 version.addMethod("listAdd",version.getClassRef("NBTTagList").getMethod("add",version.getClassRef("NBTBase")));
 
-                version.addMethod("hasTag",version.getClassRef("ItemStackNMS").getMethod("hasTag"));
-                version.addMethod("getTag",version.getClassRef("ItemStackNMS").getMethod("getTag"));
-                version.addMethod("setTag",version.getClassRef("ItemStackNMS").getMethod("setTag",version.getClassRef("NBTTagCompound")));
+                version.addMethod("hasTag",getMethodWithFallback(version.getClassRef("ItemStackNMS"),"hasTag",boolean.class));
+                version.addMethod("getTag",getMethodWithFallback(version.getClassRef("ItemStackNMS"),"getTag",version.getClassRef("NBTTagCompound")));
+                version.addMethod("setTag",getMethodWithFallback(version.getClassRef("ItemStackNMS"),"setTag",void.class,version.getClassRef("NBTTagCompound")));
                 version.addMethod("setString",version.getClassRef("NBTTagCompound").getMethod("putString",String.class,String.class));
                 version.addMethod("setBoolean",version.getClassRef("NBTTagCompound").getMethod("putBoolean",String.class,boolean.class));
                 version.addMethod("setDouble",version.getClassRef("NBTTagCompound").getMethod("putDouble",String.class,double.class));
                 version.addMethod("setInt",version.getClassRef("NBTTagCompound").getMethod("putInt",String.class,int.class));
-                version.addMethod("set",version.getClassRef("NBTTagCompound").getMethod("put",String.class,version.getClassRef("NBTBase")));
-                version.addMethod("hasKey",version.getClassRef("NBTTagCompound").getMethod("contains",String.class));
+                version.addMethod("set",getMethodWithFallback(version.getClassRef("NBTTagCompound"),"put",void.class,String.class,version.getClassRef("NBTBase")));
+                version.addMethod("hasKey",getMethodWithFallback(version.getClassRef("NBTTagCompound"),"contains",boolean.class,String.class));
                 version.addMethod("getString",version.getClassRef("NBTTagCompound").getMethod("getString",String.class));
                 version.addMethod("getBoolean",version.getClassRef("NBTTagCompound").getMethod("getBoolean",String.class));
                 version.addMethod("getInt",version.getClassRef("NBTTagCompound").getMethod("getInt",String.class));
                 version.addMethod("getDouble",version.getClassRef("NBTTagCompound").getMethod("getDouble",String.class));
                 version.addMethod("getCompound",version.getClassRef("NBTTagCompound").getMethod("getCompound",String.class));
                 version.addMethod("getList",version.getClassRef("NBTTagCompound").getMethod("getList",String.class,int.class));
-                version.addMethod("get",version.getClassRef("NBTTagCompound").getMethod("get",String.class));
-                version.addMethod("remove",version.getClassRef("NBTTagCompound").getMethod("remove",String.class));
-                version.addMethod("getKeys",version.getClassRef("NBTTagCompound").getMethod("getAllKeys"));
-                version.addMethod("hasKeyOfType",version.getClassRef("NBTTagCompound").getMethod("contains",String.class,int.class));
-                version.addMethod("parse",version.getClassRef("MojangsonParser").getMethod("parseTag",String.class));
+                version.addMethod("get",getMethodWithFallback(version.getClassRef("NBTTagCompound"),"get",version.getClassRef("NBTBase"),String.class));
+                version.addMethod("remove",getMethodWithFallback(version.getClassRef("NBTTagCompound"),"remove",void.class,String.class));
+                version.addMethod("getKeys",getMethodWithFallback(version.getClassRef("NBTTagCompound"),"getAllKeys",Set.class));
+                version.addMethod("hasKeyOfType",getMethodWithFallback(version.getClassRef("NBTTagCompound"),"contains",boolean.class,String.class,int.class));
+                version.addMethod("getOrCreateTag",getMethodWithFallback(version.getClassRef("ItemStackNMS"),"getOrCreateTag",version.getClassRef("NBTTagCompound")));
+                version.addMethod("parse",getMethodWithFallback(version.getClassRef("MojangsonParser"),"parseTag",version.getClassRef("NBTTagCompound"),String.class));
                 return;
             }
             //Classes
@@ -251,8 +253,10 @@ public class NMSManager {
         List<String> nbtList = new ArrayList<>();
         try {
             Object newItem = version.getMethodRef("asNMSCopy").invoke(null,item); //ItemStackNMS
-            if((boolean)version.getMethodRef("hasTag").invoke(newItem,null)){
-                Object compound = version.getMethodRef("getTag").invoke(newItem,null);
+            Object compound = serverVersionGreaterEqualThan(ServerVersion.v1_20_R4)
+                    ? version.getMethodRef("getTag").invoke(newItem,null)
+                    : (hasTag(newItem) ? version.getMethodRef("getTag").invoke(newItem,null) : null);
+            if(compound != null){
                 Set<String> tags = (Set<String>) version.getMethodRef("getKeys").invoke(compound,null);
                 Set<String> notTags = new HashSet<>(Arrays.asList(
                         "ench", "HideFlags", "display", "SkullOwner", "AttributeModifiers", "Enchantments",
@@ -354,8 +358,10 @@ public class NMSManager {
     public List<String> getAttributes(ItemStack item) {
         try {
             Object newItem = version.getMethodRef("asNMSCopy").invoke(null,item); //ItemStackNMS
-            if((boolean)version.getMethodRef("hasTag").invoke(newItem,null)) {
-                Object compound = version.getMethodRef("getTag").invoke(newItem, null);
+            Object compound = serverVersionGreaterEqualThan(ServerVersion.v1_20_R4)
+                    ? version.getMethodRef("getTag").invoke(newItem, null)
+                    : (hasTag(newItem) ? version.getMethodRef("getTag").invoke(newItem, null) : null);
+            if(compound != null) {
                 if((boolean)version.getMethodRef("hasKey").invoke(compound,"AttributeModifiers")){
                     List<String> attributeList = new ArrayList<>();
                     Object attributes = version.getMethodRef("getList").invoke(compound,"AttributeModifiers",10); //NBTTagList
@@ -426,19 +432,54 @@ public class NMSManager {
 
     private Object getNBTCompound(Object newItem){
         try {
-            boolean hasTag = (boolean)version.getMethodRef("hasTag").invoke(newItem,null);
-            Object compound = hasTag ? version.getMethodRef("getTag").invoke(newItem,null) :
-                    version.getClassRef("NBTTagCompound").newInstance();
-            return compound;
+            if(serverVersionGreaterEqualThan(ServerVersion.v1_20_R4)){
+                Object compound = version.getMethodRef("getTag").invoke(newItem,null);
+                if(compound == null){
+                    compound = version.getMethodRef("getOrCreateTag").invoke(newItem);
+                }
+                return compound;
+            }
+
+            return hasTag(newItem)
+                    ? version.getMethodRef("getTag").invoke(newItem,null)
+                    : version.getClassRef("NBTTagCompound").newInstance();
         } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
             e.printStackTrace();
         }
         return null;
     }
 
+    private boolean hasTag(Object newItem) throws InvocationTargetException, IllegalAccessException {
+        return (boolean)version.getMethodRef("hasTag").invoke(newItem,null);
+    }
+
 
 
     private boolean serverVersionGreaterEqualThan(ServerVersion version){
         return serverVersion.ordinal() >= version.ordinal();
+    }
+
+    private Method getMethodWithFallback(Class<?> clazz, String expectedName, Class<?> returnType, Class<?>... parameterTypes) throws NoSuchMethodException {
+        try {
+            return clazz.getMethod(expectedName, parameterTypes);
+        } catch (NoSuchMethodException ignored) {
+            for (Method method : clazz.getMethods()) {
+                if (method.getParameterCount() != parameterTypes.length) {
+                    continue;
+                }
+                Class<?>[] params = method.getParameterTypes();
+                boolean matches = true;
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    if (!params[i].isAssignableFrom(parameterTypes[i])) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches && (returnType == null || returnType.isAssignableFrom(method.getReturnType()))) {
+                    return method;
+                }
+            }
+            throw new NoSuchMethodException(expectedName);
+        }
     }
 }
