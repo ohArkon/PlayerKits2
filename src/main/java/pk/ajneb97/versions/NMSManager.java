@@ -22,44 +22,11 @@ public class NMSManager {
         this.version = new Version();
         this.serverVersion = PlayerKits2.serverVersion;
 
+        if(serverVersionGreaterEqualThan(ServerVersion.v1_20_R4)){
+            return;
+        }
+
         try {
-            if(serverVersionGreaterEqualThan(ServerVersion.v1_20_R4)){
-                // Mojang-mapped packages (1.20.5+)
-                version.addClass("CraftItemStack",Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack"));
-                version.addClass("ItemStackNMS",Class.forName("net.minecraft.world.item.ItemStack"));
-                version.addClass("NBTTagCompound",Class.forName("net.minecraft.nbt.CompoundTag"));
-                version.addClass("MojangsonParser",Class.forName("net.minecraft.nbt.TagParser"));
-                version.addClass("NBTBase",Class.forName("net.minecraft.nbt.Tag"));
-                version.addClass("NBTTagList",Class.forName("net.minecraft.nbt.ListTag"));
-
-                version.addMethod("asNMSCopy",version.getClassRef("CraftItemStack").getMethod("asNMSCopy",ItemStack.class));
-                version.addMethod("asBukkitCopy",version.getClassRef("CraftItemStack").getMethod("asBukkitCopy",version.getClassRef("ItemStackNMS")));
-                version.addMethod("listSize",version.getClassRef("NBTTagList").getMethod("size"));
-                version.addMethod("listGet",version.getClassRef("NBTTagList").getMethod("get",int.class));
-                version.addMethod("listAdd",version.getClassRef("NBTTagList").getMethod("add",version.getClassRef("NBTBase")));
-
-                version.addMethod("hasTag",version.getClassRef("ItemStackNMS").getMethod("hasTag"));
-                version.addMethod("getTag",version.getClassRef("ItemStackNMS").getMethod("getTag"));
-                version.addMethod("setTag",version.getClassRef("ItemStackNMS").getMethod("setTag",version.getClassRef("NBTTagCompound")));
-                version.addMethod("setString",version.getClassRef("NBTTagCompound").getMethod("putString",String.class,String.class));
-                version.addMethod("setBoolean",version.getClassRef("NBTTagCompound").getMethod("putBoolean",String.class,boolean.class));
-                version.addMethod("setDouble",version.getClassRef("NBTTagCompound").getMethod("putDouble",String.class,double.class));
-                version.addMethod("setInt",version.getClassRef("NBTTagCompound").getMethod("putInt",String.class,int.class));
-                version.addMethod("set",version.getClassRef("NBTTagCompound").getMethod("put",String.class,version.getClassRef("NBTBase")));
-                version.addMethod("hasKey",version.getClassRef("NBTTagCompound").getMethod("contains",String.class));
-                version.addMethod("getString",version.getClassRef("NBTTagCompound").getMethod("getString",String.class));
-                version.addMethod("getBoolean",version.getClassRef("NBTTagCompound").getMethod("getBoolean",String.class));
-                version.addMethod("getInt",version.getClassRef("NBTTagCompound").getMethod("getInt",String.class));
-                version.addMethod("getDouble",version.getClassRef("NBTTagCompound").getMethod("getDouble",String.class));
-                version.addMethod("getCompound",version.getClassRef("NBTTagCompound").getMethod("getCompound",String.class));
-                version.addMethod("getList",version.getClassRef("NBTTagCompound").getMethod("getList",String.class,int.class));
-                version.addMethod("get",version.getClassRef("NBTTagCompound").getMethod("get",String.class));
-                version.addMethod("remove",version.getClassRef("NBTTagCompound").getMethod("remove",String.class));
-                version.addMethod("getKeys",version.getClassRef("NBTTagCompound").getMethod("getAllKeys"));
-                version.addMethod("hasKeyOfType",version.getClassRef("NBTTagCompound").getMethod("contains",String.class,int.class));
-                version.addMethod("parse",version.getClassRef("MojangsonParser").getMethod("parseTag",String.class));
-                return;
-            }
             //Classes
             version.addClass("CraftItemStack",Class.forName("org.bukkit.craftbukkit."+serverVersion+".inventory.CraftItemStack"));
             if(serverVersionGreaterEqualThan(ServerVersion.v1_17_R1)){
